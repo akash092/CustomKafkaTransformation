@@ -16,20 +16,18 @@ import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
 
 public class CustomTransform<R extends ConnectRecord<R>> implements Transformation<R> {
 
-    public static final String OVERVIEW_DOC =
-            "Transform Firebolt App payload to Firebolt ES forma";
-
+    public static final String OVERVIEW_DOC = "Transform Payload to Custom Format";
     private static final String PURPOSE = "transforming payload";
-
     public static final ConfigDef CONFIG_DEF = new ConfigDef();
-
     @Override
     public void configure(Map<String, ?> props) {
     }
+
     @Override
     public ConfigDef config() {
         return CONFIG_DEF;
     }
+
     @Override
     public void close() {
     }
@@ -37,7 +35,7 @@ public class CustomTransform<R extends ConnectRecord<R>> implements Transformati
     @Override
     public R apply(R record) {
         final Map<String, Object> originalRecord = requireMap(operatingValue(record), PURPOSE);
-
+        System.out.println("Inside method :: originalRecord :: "+originalRecord.toString());
         final HashMap<String, Object> updatedValue = new HashMap<String, Object>();
 
         for (Map.Entry<String, Object> entry : originalRecord.entrySet()) {
@@ -52,75 +50,31 @@ public class CustomTransform<R extends ConnectRecord<R>> implements Transformati
             //processing payload attribute
             Schema.Type inferredType = ConnectSchema.schemaType(value.getClass());
             if (inferredType == null) {
-                throw new DataException("Flatten transformation was passed a value of type " + value.getClass()
+                throw new DataException("transformation was passed a value of type " + value.getClass()
                         + " which is not supported by Connect's data API");
             }
             final Map<String, Object> payloadValue = requireMap(entry.getValue(), PURPOSE);
             for (Map.Entry<String, Object> payloadEntry : payloadValue.entrySet()) {
-                // now at the level of "to" / "from" / "channel"
+                // "channel" level
                 final String payloadSubField = payloadEntry.getKey();
                 Object payloadSubValue = payloadEntry.getValue();
                 switch (payloadSubField) {
-                    case "to":
-                        updatedValue.put("To", payloadSubValue);
-                        break;
-                    case "from":
-                        updatedValue.put("From", payloadSubValue);
-                        break;
                     case "channel":
                         if (payloadSubValue.toString().equals("sms")) {
                             updatedValue.put("Channel", "SMS");
-                        } else if (payloadSubValue.toString().equals("email")) {
-                            updatedValue.put("Channel", "Email");
                         } else {
                             updatedValue.put("Channel", payloadSubValue);
                         }
                         break;
-                    case "countryISO2":
-                        updatedValue.put("Country", payloadSubValue);
-                        break;
-                    case "app":
-                        updatedValue.put("App", payloadSubValue);
-                        break;
-                    case "status":
-                        updatedValue.put("Status", payloadSubValue);
-                        break;
-                    case "statusMessage":
-                        updatedValue.put("StatusMessage", payloadSubValue);
-                        break;
-                    case "subject":
-                        updatedValue.put("Subject", payloadSubValue);
-                        break;
-                    case "content":
-                        updatedValue.put("Content", payloadSubValue);
-                        break;
-                    case "metadata":
-                        updatedValue.put("Metadata", payloadSubValue);
-                        break;
-                    case "publishedAt":
-                        updatedValue.put("PublishedAt", payloadSubValue);
-                        break;
-                    case "smpId":
-                        updatedValue.put("SMPId", payloadSubValue);
-                        break;
-                    case "additionalAttributes":
+                    case "additional":
                         final Map<String, Object> addAttr = requireMap(payloadSubValue, PURPOSE);
                         for (Map.Entry<String, Object> addAttrEntry : addAttr.entrySet()) {
-                            // vendor / correlationID /  requestPayload
+                            // within additional like groupId
                             final String addAttrField = addAttrEntry.getKey();
                             Object addAttrValue = addAttrEntry.getValue();
                             switch (addAttrField) {
-                                case "vendor":
-                                    updatedValue.put("Vendor", addAttrValue);
-                                    break;
                                 case "groupId":
                                     updatedValue.put("GroupId", addAttrValue);
-                                    break;
-                                case "correlationId":
-                                    updatedValue.put("CorrelationId", addAttrValue);
-                                    break;
-                                case "requestPayload":
-                                    updatedValue.put("RequestPayload", addAttrValue);
                                     break;
                             }
                         }
@@ -128,7 +82,7 @@ public class CustomTransform<R extends ConnectRecord<R>> implements Transformati
                 }
             }
         }
-
+        System.out.println("Inside method :: originalRecord :: "+updatedValue.toString());
         return newRecord(record, null, updatedValue);
     }
 

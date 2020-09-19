@@ -25,22 +25,12 @@ public class CustomTransformTest {
 
     @Test
     public void testSampleData () {
-
-        Map<String, Object> requestPayloadDetails = new HashMap<>();
-        requestPayloadDetails.put("sender", "akagrawal@tesla.com");
-        requestPayloadDetails.put("recipient", "akash.tech10@gmailcom");
-
         Map<String, Object> requestPayload = new HashMap<>();
-        requestPayload.put("requestPayload", (Object) requestPayloadDetails);
-        requestPayload.put("vendor", "twilio");
         requestPayload.put("groupId", 12345);
 
         Map<String, Object> parent = new HashMap<>();
-        parent.put("to", "akagrawal@tesla.com");
-        parent.put("from", "akash.tech10@gmailcom");
         parent.put("channel", "sms");
-        parent.put("additionalAttributes", (Object)requestPayload);
-
+        parent.put("additional", (Object)requestPayload);
 
         Map<String, Object> oneLevelNestedMap = Collections.singletonMap("payload", (Object) parent);
 
@@ -52,6 +42,7 @@ public class CustomTransformTest {
         assertTrue(transformed.value() instanceof Map);
         @SuppressWarnings("unchecked")
         Map<String, Object> transformedMap = (Map<String, Object>) transformed.value();
-        assertEquals("akagrawal@tesla.com", transformedMap.get("To"));
+        assertEquals("SMS", transformedMap.get("Channel"));
+        assertEquals(12345, transformedMap.get("GroupId"));
     }
 }
